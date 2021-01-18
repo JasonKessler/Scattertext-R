@@ -1,4 +1,4 @@
-<h2 align=center>Supervised Bicentroid Projection of Harmony in life words</h2> <!-- some code adapted from www.degeneratestate.org/static/metal_lyrics/metal_line.html -->
+<h2 align=center>Supervised Bicentroid Projection of Harmony in life words</h2> <h3 align=center>Tags are colored by p-scores; blue indicates close to 1 or 0, red closer to 0.5.</h3> <!-- some code adapted from www.degeneratestate.org/static/metal_lyrics/metal_line.html -->
 <!-- <!DOCTYPE html>
 <meta content="utf-8"> -->
 <style> /* set the CSS */
@@ -4107,8 +4107,13 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                      enableTermCategoryDescription = true,
                      getCustomTermHtml = null,
                      headerNames = null,
-                     headerSortingAlgos = null
-                     ) {
+                     headerSortingAlgos = null,
+                     ignoreCategories = false,
+                     backgroundLabels = null,
+                     labelPriorityFunction = (a, b) => Math.min(a.x, 1 - a.x, a.y, 1 - a.y) - Math.min(b.x, 1 - b.x, b.y, 1 - b.y),
+                     textColorColumn = undefined,
+                     suppressLabelColumn = undefined
+    ) {
         //var divName = 'd3-div-1';
         // Set the dimensions of the canvas / graph
         var padding = {top: 30, right: 20, bottom: 30, left: 50};
@@ -4126,6 +4131,9 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
         var x = d3.scaleLinear().range([0, width]);
         var y = d3.scaleLinear().range([height, 0]);
 
+        console.log("X-Y");
+        console.log(x);
+        console.log(y);
         if (unifiedContexts) {
             document.querySelectorAll('#' + divName + '-' + 'notcol')
                 .forEach(function (x) {
@@ -4705,7 +4713,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             if ('metalists' in fullData && term in fullData.metalists) {
                 // from https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
                 function escapeRegExp(str) {
-                    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|\']/g, "\\$&");
+                    return str.replace(/[\\?\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|\']/g, "\\$&");
                 }
 
                 console.log('term');
@@ -4858,7 +4866,9 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 allContexts.forEach(function (singleDoc) {
                     numMatches[singleDoc.docLabel] = (numMatches[singleDoc.docLabel] || 0) + 1;
                 });
-                var allNotMatches = notmatches[0].concat(notmatches[1]).concat(notmatches[2]).concat(notmatches[3]);
+                var allNotMatches = [];
+                if (notmatches !== undefined)
+                    allNotMatches = notmatches[0].concat(notmatches[1]).concat(notmatches[2]).concat(notmatches[3]);
 
                 /*contexts.forEach(function(context) {
                      context.forEach(function (singleDoc) {
@@ -4866,7 +4876,9 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                          addSnippets(singleDoc, divId);
                      });
                  });*/
-                console.log("ORDERING !!!!!"); console.log(fullData.info.category_name); console.log(sortDocLabelsByName);
+                console.log("ORDERING !!!!!");
+                console.log(fullData.info.category_name);
+                console.log(sortDocLabelsByName);
                 var docLabelCountsSorted = Object.keys(docLabelCounts).map(key => (
                     {
                         "label": fullData.docs.categories[key],
@@ -4876,7 +4888,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                         'percent': (numMatches[key] || 0) * 100. / docLabelCounts[key]
                     }))
                     .sort(function (a, b) {
-                        if(highlightSelectedCategory) {
+                        if (highlightSelectedCategory) {
                             if (a['label'] === fullData.info.category_name) {
                                 return -1;
                             }
@@ -4908,18 +4920,23 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 function getCategoryInlineHeadingHTML(counts) {
                     return '<a name="' + divName + '-category'
                         + counts.labelNum + '"></a>'
-                        + counts.label + ": <span class=topic_preview>"
+                        + (ignoreCategories ? "" : counts.label + ": ") + "<span class=topic_preview>"
                         + getCategoryStatsHTML(counts)
                         + "</span>";
                 }
 
 
                 docLabelCountsSorted.forEach(function (counts) {
-                    var htmlToAdd = "<b>" + counts.label + "</b>: " + getCategoryStatsHTML(counts);
+
+                    var htmlToAdd = "";
+                    if (!ignoreCategories) {
+                        htmlToAdd += "<b>" + counts.label + "</b>: " + getCategoryStatsHTML(counts);
+                        ;
+                    }
 
                     if (counts.matches > 0) {
                         var headerClassName = 'text_header';
-                        if((counts.label === fullData.info.category_name) && highlightSelectedCategory) {
+                        if ((counts.label === fullData.info.category_name) && highlightSelectedCategory) {
                             d3.select(divId)
                                 .append('div')
                                 .attr('class', 'separator')
@@ -4942,7 +4959,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                                     addSnippets(singleDoc, divId, false);
                                 });
                         }
-                        if((counts.label === fullData.info.category_name) && highlightSelectedCategory) {
+                        if ((counts.label === fullData.info.category_name) && highlightSelectedCategory) {
                             d3.select(divId).append('div').attr('class', 'separator').html("<b>End selected category</b>");
                             d3.select(divId).append('div').html("<br />");
                         }
@@ -5030,7 +5047,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             }
             console.log("HERE")
             console.log(getCustomTermHtml)
-            if(getCustomTermHtml !== null) {
+            if (getCustomTermHtml !== null) {
                 console.log("Making custom html")
                 termHtml = getCustomTermHtml(info);
             }
@@ -5210,12 +5227,11 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 console.log(docLabelCountsSorted)
 
                 docLabelCountsSorted.forEach(function (counts) {
-                    var htmlToAdd = "<b>" + counts.label + "</b>: " + getCategoryStatsHTML(counts);
+                    var htmlToAdd = (ignoreCategories ? "" : "<b>" + counts.label + "</b>: ") + getCategoryStatsHTML(counts);
                     if (showCategoryHeadings) {
-                        console.log("XXXX")
                         d3.select('#' + divName + '-' + 'contexts')
                             .append('div')
-                            .html("XX" + htmlToAdd)
+                            .html(htmlToAdd)
                             .on("click", function () {
                                 window.location.hash = '#' + divName + '-' + 'category' + counts.labelNum
                             });
@@ -5266,7 +5282,8 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
 
                 // https://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
                 function escapeRegExp(string) {
-                    return string.replace(/[#.*+?^${}()|[\]\\]'\%/g, '\\$&'); // $& means the whole matched string
+                    return string.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\,\\\^\$\|\'#?]/g, "\\$&");
+                    //return string.replace(/[\?#.*+^${}()|[\]\\]'\%/g, '\\$&'); // $& means the whole matched string
                 }
 
                 /*
@@ -5508,6 +5525,30 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             }
         }
 
+        function getCircleForSearchTerm(mysvg, searchTermInfo) {
+            var circle = mysvg;
+            if (circle.tagName !== "circle") { // need to clean this thing up
+                circle = mysvg._groups[0][searchTermInfo.ci];
+                if (circle === undefined || circle.tagName != 'circle') {
+                    if (mysvg._groups[0].children !== undefined) {
+                        circle = mysvg._groups[0].children[searchTermInfo.ci];
+                    }
+                }
+                if (circle === undefined || circle.tagName != 'circle') {
+                    if (mysvg._groups[0][0].children !== undefined) {
+                        circle = Array.prototype.filter.call(
+                            mysvg._groups[0][0].children,
+                            x => (x.tagName == "circle" && x.__data__['term'] == searchTermInfo.term)
+                        )[0];
+                    }
+                }
+                if ((circle === undefined || circle.tagName != 'circle') && mysvg._groups[0][0].children !== undefined) {
+                    circle = mysvg._groups[0][0].children[searchTermInfo.ci];
+                }
+            }
+            return circle;
+        }
+
         function showToolTipForTerm(data, mysvg, searchTerm, searchTermInfo, showObscured = true) {
             //var searchTermInfo = termDict[searchTerm];
             console.log("showing tool tip")
@@ -5519,36 +5560,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                     .text(searchTerm + " didn't make it into the visualization.");
             } else {
                 d3.select("#" + divName + "-alertMessage").text("");
-                var circle = mysvg;
-                console.log("mysvg");
-                console.log(mysvg)
-                if (circle.tagName !== "circle") { // need to clean this thing up
-                    circle = mysvg._groups[0][searchTermInfo.ci];
-                    if (circle === undefined || circle.tagName != 'circle') {
-                        console.log("circle0")
-                        if (mysvg._groups[0].children !== undefined) {
-                            circle = mysvg._groups[0].children[searchTermInfo.ci];
-                        }
-                    }
-                    if (circle === undefined || circle.tagName != 'circle') {
-                        console.log("circle1");
-                        if (mysvg._groups[0][0].children !== undefined) {
-                            circle = Array.prototype.filter.call(
-                                mysvg._groups[0][0].children,
-                                x => (x.tagName == "circle" && x.__data__['term'] == searchTermInfo.term)
-                            )[0];
-                        }
-                        console.log(circle)
-                    }
-                    if ((circle === undefined || circle.tagName != 'circle') && mysvg._groups[0][0].children !== undefined) {
-                        console.log("circle2");
-                        console.log(mysvg._groups[0][0])
-                        console.log(mysvg._groups[0][0].children)
-                        console.log(searchTermInfo.ci);
-                        circle = mysvg._groups[0][0].children[searchTermInfo.ci];
-                        console.log(circle)
-                    }
-                }
+                var circle = getCircleForSearchTerm(mysvg, searchTermInfo);
                 if (circle) {
                     var mySVGMatrix = circle.getScreenCTM().translate(circle.cx.baseVal.value, circle.cy.baseVal.value);
                     var pageX = mySVGMatrix.e;
@@ -5626,14 +5638,22 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             }
 
             // Scale the range of the data.  Add some space on either end.
-            if(useGlobalScale) {
+            if (useGlobalScale) {
                 var axisMax = Math.max(
-                    d3.max(data, function (d) {return d.x;}),
-                    d3.max(data, function (d) {return d.y;}),
+                    d3.max(data, function (d) {
+                        return d.x;
+                    }),
+                    d3.max(data, function (d) {
+                        return d.y;
+                    }),
                 )
                 var axisMin = Math.min(
-                    d3.min(data, function (d) {return d.x;}),
-                    d3.min(data, function (d) {return d.y;}),
+                    d3.min(data, function (d) {
+                        return d.x;
+                    }),
+                    d3.min(data, function (d) {
+                        return d.y;
+                    }),
                 )
                 axisMin = axisMin - (axisMax - axisMin) * padding;
                 axisMax = axisMax + (axisMax - axisMin) * padding;
@@ -5659,6 +5679,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
 
             //var rangeTree = null; // keep boxes of all points and labels here
             var rectHolder = new RectangleHolder();
+            var axisRectHolder = new RectangleHolder();
             // Add the scatterplot
             data.forEach(function (d, i) {
                 d.ci = i
@@ -5697,7 +5718,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                             return interpolateLightGreys(d.s);
                         }
                     } else {
-                        if (d.term == "psychological") {
+                        if (d.term === "the") {
                             console.log("COLS " + d.s + " " + color(d.s) + " " + d.term)
                             console.log(d)
                             console.log(color)
@@ -5791,45 +5812,52 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 pointStore.push([x2, y2]);
                 curLabel.remove();
             }
+
             var configs = [
                 {'anchor': 'end', 'group': 1, 'xoff': -5, 'yoff': -3, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'end', 'group': 1,'xoff': -5, 'yoff': 10, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'end', 'group': 1, 'xoff': -5, 'yoff': 10, 'alignment-baseline': 'ideographic'},
 
-                {'anchor': 'end', 'group': 2,'xoff': 10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'end', 'group': 2,'xoff': -10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'end', 'group': 2,'xoff': 10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'end', 'group': 2,'xoff': -10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'end', 'group': 2, 'xoff': 10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'end', 'group': 2, 'xoff': -10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'end', 'group': 2, 'xoff': 10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'end', 'group': 2, 'xoff': -10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
 
                 {'anchor': 'start', 'group': 1, 'xoff': 3, 'yoff': 10, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'start', 'group': 1,'xoff': 3, 'yoff': -3, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 1, 'xoff': 3, 'yoff': -3, 'alignment-baseline': 'ideographic'},
 
-                {'anchor': 'start', 'group': 2,'xoff': 5, 'yoff': 10, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'start', 'group': 2,'xoff': 5, 'yoff': -3, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 2, 'xoff': 5, 'yoff': 10, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 2, 'xoff': 5, 'yoff': -3, 'alignment-baseline': 'ideographic'},
 
-                {'anchor': 'start', 'group': 3,'xoff': 10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'start', 'group': 3,'xoff': -10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'start', 'group': 3,'xoff': 10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
-                {'anchor': 'start', 'group': 3,'xoff': -10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 3, 'xoff': 10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 3, 'xoff': -10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 3, 'xoff': 10, 'yoff': -15, 'alignment-baseline': 'ideographic'},
+                {'anchor': 'start', 'group': 3, 'xoff': -10, 'yoff': 15, 'alignment-baseline': 'ideographic'},
             ];
             if (centerLabelsOverPoints) {
                 configs = [{'anchor': 'middle', 'xoff': 0, 'yoff': 0, 'alignment-baseline': 'middle'}];
             }
+
             function labelPointsIfPossible(datum, myX, myY) {
+                if(suppressLabelColumn !== undefined
+                    && datum.etc !== undefined
+                    && datum.etc[suppressLabelColumn] === true) {
+                    return false;
+                }
+
                 var term = datum.term;
-                //console.log('xxx'); console.log(term); console.log(term.display !== undefined && term.display === false)
-                //if(term.display !== undefined && term.display === false) {
-                //    return false;
-                //}
                 if (datum.x > datum.y) {
-                    configs.sort((a,b) => a.anchor == 'end' && b.anchor=='end'
-                        ? a.group - b.group : (a.anchor == 'end') - (b.anchor=='end'));
+                    configs.sort((a, b) => a.anchor == 'end' && b.anchor == 'end'
+                        ? a.group - b.group : (a.anchor == 'end') - (b.anchor == 'end'));
                 } else {
-                    configs.sort((a,b) => a.anchor == 'start' && b.anchor=='start'
-                        ? a.group - b.group : (a.anchor == 'start') - (b.anchor=='start'));
+                    configs.sort((a, b) => a.anchor == 'start' && b.anchor == 'start'
+                        ? a.group - b.group : (a.anchor == 'start') - (b.anchor == 'start'));
                 }
                 var matchedElement = null;
 
-
+                var termColor = 'rgb(0,0,0)';
+                if(textColorColumn !== undefined && datum.etc !== undefined && datum.etc[textColorColumn] !== undefined) {
+                    termColor = datum.etc[textColorColumn];
+                }
                 for (var configI in configs) {
                     var config = configs[configI];
                     var curLabel = svg.append("text")
@@ -5843,12 +5871,10 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                         .attr('font-size', '10px')
                         .attr("text-anchor", config['anchor'])
                         .attr("alignment-baseline", config['alignment'])
+                        .attr("fill", termColor)
                         .text(term);
                     var bbox = curLabel.node().getBBox();
-                    var borderToRemove = .25;
-                    if (doCensorPoints) {
-                        var borderToRemove = .5;
-                    }
+                    var borderToRemove = doCensorPoints ? 0.5 : .25;
 
                     var x1 = bbox.x + borderToRemove,
                         y1 = bbox.y + borderToRemove,
@@ -5973,14 +5999,19 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             }
 
 
-            function registerFigureBBox(curLabel) {
+            function registerFigureBBox(curLabel, axis = false) {
                 var bbox = curLabel.node().getBBox();
                 var borderToRemove = 1.5;
                 var x1 = bbox.x + borderToRemove,
                     y1 = bbox.y + borderToRemove,
                     x2 = bbox.x + bbox.width - borderToRemove,
                     y2 = bbox.y + bbox.height - borderToRemove;
-                rectHolder.add(new Rectangle(x1, y1, x2, y2));
+                var rect = new Rectangle(x1, y1, x2, y2)
+                if (axis) {
+                    axisRectHolder.add(rect)
+                } else {
+                    rectHolder.add(rect);
+                }
                 //return insertRangeTree(rangeTree, x1, y1, x2, y2, '~~_other_');
             }
 
@@ -6005,7 +6036,6 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                     .attr('font-family', 'Helvetica, Arial, Sans-Serif')
                     .attr('font-size', '10px')
                     .text(labelText);
-                registerFigureBBox(yLabel);
             }
 
             d3.selection.prototype.moveToBack = function () {
@@ -6018,9 +6048,12 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             };
 
             if (verticalLines) {
+                if (typeof (verticalLines) === "number") {
+                    verticalLines = [verticalLines]; // r likes to make single element vectors doubles; this is a hackish workaround
+                }
                 for (i in verticalLines) {
                     svg.append("g")
-                        .attr("transform", "translate(" + x(verticalLines) + ", 1)")
+                        .attr("transform", "translate(" + x(verticalLines[i]) + ", 1)")
                         .append("line")
                         .attr("y2", height)
                         .style("stroke", "#dddddd")
@@ -6067,7 +6100,8 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                         .attr('font-family', 'Helvetica, Arial, Sans-Serif')
                         .attr('font-size', '10px');
                 }
-                registerFigureBBox(myYAxis);
+                registerFigureBBox(myYAxis, true);
+                registerFigureBBox(myXAxis, true);
 
                 function getLabelText(axis) {
                     if (axis == 'y') {
@@ -6146,7 +6180,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 }
             }
 
-              if (showDiagonal) {
+            if (showDiagonal) {
                 var diagonal = svg.append("g")
                     .append("line")
                     .attr("x1", 0)
@@ -6205,7 +6239,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                         return headerSortingAlgos['upper'];
                     return scoreSortForCategory;
                 } else {
-                    if(headerSortingAlgos !== null && headerSortingAlgos['lower'] !== undefined)
+                    if (headerSortingAlgos !== null && headerSortingAlgos['lower'] !== undefined)
                         return headerSortingAlgos['lower'];
                     return scoreSortForNotCategory;
                 }
@@ -6220,7 +6254,10 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             function showAssociatedWordList(data, word, header, isUpperPane, length = 14) {
                 var sortedData = null;
                 var sortingAlgo = pickTermSortingAlgorithm(isUpperPane);
-                console.log("showAssociatedWordList"); console.log(header); console.log("WORD"); console.log(word)
+                console.log("showAssociatedWordList");
+                console.log(header);
+                console.log("WORD");
+                console.log(word)
                 sortedData = data.filter(term => (term.display === undefined || term.display === true)).sort(sortingAlgo);
                 if (wordVecMaxPValue) {
                     function signifTest(x) {
@@ -6315,10 +6352,10 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             if (showTopTerms) {
                 var upperHeaderName = "Top " + fullData['info']['category_name'];
                 var lowerHeaderName = "Top " + fullData['info']['not_category_name'];
-                if(headerNames !== null) {
-                    if(headerNames.upper !== undefined)
+                if (headerNames !== null) {
+                    if (headerNames.upper !== undefined)
                         upperHeaderName = headerNames.upper;
-                    if(headerNames.lower !== undefined)
+                    if (headerNames.lower !== undefined)
                         lowerHeaderName = headerNames.lower;
                 }
                 payload.topTermsPane = showTopTermsPane(
@@ -6385,12 +6422,11 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 var labeledPoints = [];
                 //var filteredData = data.filter(d=>d.display === undefined || d.display === true);
                 //for (var i = 0; i < filteredData.length; i++) {
-                data.sort((a,b)=>Math.min(a.x, 1-a.x, a.y, 1-a.y)-Math.min(b.x, 1-b.x, b.y, 1-b.y))
-                    .forEach(function (datum, i) {
+                data.sort(labelPriorityFunction).forEach(function (datum, i) {
                     //console.log(datum.i, datum.ci, i)
                     //var label = labelPointsIfPossible(i, getX(filteredData[i]), getY(filteredData[i]));
                     if (datum.display === undefined || datum.display === true) {
-                        if (datum.term == "the" || i == 1) {
+                        if (i === 1) {
                             console.log("trying to label datum # " + i + ": " + datum.term)
                             console.log(datum)
                             console.log([getX(datum), getY(datum)])
@@ -6416,6 +6452,27 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 function (d) {
                     return d.y
                 });
+
+            if (backgroundLabels !== null) {
+                backgroundLabels.map(
+                    function (label) {
+                        svg.append("text")
+                            .attr("x", x(label.X))
+                            .attr("y", y(label.Y))
+                            .attr("text-anchor", "middle")
+                            .style("font-size", "30")
+                            .style("fill", "rgb(200,200,200)")
+                            .text(label.Text)
+                            .lower()
+                            .on('mouseover', function (d) {
+                                d3.select(this).style('stroke','black').style('stroke-width', '1px').raise()
+                            })
+                            .on('mouseout', function (d) {
+                                d3.select(this).style('stroke-width', '0px').style('fill', 'rgb(200,200,200)').lower()
+                            })
+                    }
+                )
+            }
 
 
             /*
@@ -6548,10 +6605,15 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 if (unifiedContexts) {
                     fullData.docs.categories.forEach(function (x, i) {
                         if (docCounts[x] > 0) {
-                            messages.push('<b>' + x + '</b> document count: '
+                            var message = "";
+                            if (!ignoreCategories) {
+                                message += '<b>' + x + '</b>: ';
+                            }
+                            message += 'document count: '
                                 + Number(docCounts[x]).toLocaleString('en')
                                 + '; word count: '
-                                + Number(wordCounts[x]).toLocaleString('en'));
+                                + Number(wordCounts[x]).toLocaleString('en')
+                            messages.push(message);
                         }
                     });
                 } else {
@@ -6628,7 +6690,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 console.log(this.fullData)
                 console.log(this)
                 console.log("X/Y coords")
-                console.log(this.fullData.data.filter(d => d.display === undefined || d.display === true).map(d=>[d.x, d.y]))
+                console.log(this.fullData.data.filter(d => d.display === undefined || d.display === true).map(d => [d.x, d.y]))
                 var circles = this.svg//.select('#' + divName)
                     .selectAll("dot")
                     .data(this.fullData.data.filter(d => d.display === undefined || d.display === true))
@@ -7020,7 +7082,7 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
             var fgFreqSum = denseRanks.fgFreqs.reduce((a, b) => a + b, 0)
             var bgFreqSum = denseRanks.bgFreqs.reduce((a, b) => a + b, 0)
 
-            var oy = denseRanks.fgFreqs.map(count => Math.log(count + 1)/Math.log(2))
+            var oy = denseRanks.fgFreqs.map(count => Math.log(count + 1) / Math.log(2))
 
             var oymax = Math.max(...oy)
             var oymin = Math.min(...oy)
@@ -7049,7 +7111,6 @@ RectangleHolder.prototype.findMatchingRectangles = function (bx1, by1, bx2, by2,
                 term.display = true;
                 return term;
             })
-
 
 
             this.rerender(//denseRanks.bg,
@@ -7153,9 +7214,12 @@ function autocomplete(inputField, autocompleteValues, myPlotInterface) {
                 matchedCandidateDiv = document.createElement("div");
                 matchedCandidateDiv.innerHTML = "<strong>" + candidatePrefix + "</strong>";
                 matchedCandidateDiv.innerHTML += candidate.substr(userInput.length);
-                matchedCandidateDiv.innerHTML += "<input type='hidden' value='" + candidate + "'>";
+                matchedCandidateDiv.innerHTML += '<input type=hidden value="' + encodeURIComponent(candidate) + '">';
                 matchedCandidateDiv.addEventListener("click", function (e) {
-                    inputField.value = this.getElementsByTagName("input")[0].value;
+                    console.log("CLICK")
+                    console.log(this.getElementsByTagName("input")[0].value)
+                    inputField.value = decodeURIComponent(this.getElementsByTagName("input")[0].value);
+                    console.log(inputField.value)
                     closeAllLists();
                     myPlotInterface.handleSearchTerm(inputField.value);
                 });
@@ -7215,7 +7279,8 @@ function autocomplete(inputField, autocompleteValues, myPlotInterface) {
         );
 
         if (selectedCandidate) {
-            var candidateValue = selectedCandidate.children[1].value;
+            var candidateValue = decodeURIComponent(selectedCandidate.children[1].value);
+
             myPlotInterface.highlightTerm(candidateValue);
             inputField.value = candidateValue;
         }
@@ -7267,7 +7332,7 @@ false,
 getDataAndInfo(),
 true,
 false,
-(function(d) {return d.term + "<br/>Harmony score: "+ d.ox.toFixed(5) +"<br/>Satisfaction score: " + d.oy.toFixed(5)}),
+(function(d) {return d.term + "<br />Harmony score: " + d.etc["dot.y"].toFixed(6)+ "<br />Satisfaction score: " + d.etc["dot.x"].toFixed(6);}),
 null,
 null,
 (function(d) {return d3.interpolateRdYlBu(d.etc["min.p.val"])}),
@@ -7299,9 +7364,12 @@ false,
 true,
 true,
 true,
-(function(x) {return "Tag: " + x.term + "<span class=topic_preview>"  +"<br>Harmony score: " + x.etc["dot.y"].toFixed(5) +"<br>Harmony P-val: " + x.etc["p_values_dot.y"].toFixed(5) +"<br>Satisfaction score: " + x.etc["dot.x"].toFixed(5) +"<br>Satisfaction P-val: " + x.etc["p_values_dot.x"].toFixed(5) + "</span>" ;}),
-{"upperHeaderName": "Top Satisfaction/Harmony", "lowerHeaderName": "Bottom Satisfaction/Harmony"},
-{"lower": ((a,b) => a.etc.ComboScore - b.etc.ComboScore), "upper": ((a,b) => b.etc.ComboScore - a.etc.ComboScore)});
+(d => "Tag: "+d.term+"<div class=topic_preview>"+ "<b>Harmony score:</b> " + d.etc["dot.y"].toFixed(6) + "<br />"+ "<b>Harmony P-val:</b> " + d.etc["p_values_dot.y"].toFixed(6) + "<br />"+ "<b>Satisfaction score:</b> " + d.etc["dot.x"].toFixed(6) + "<br />"+ "<b>Satisfaction P-val:</b> " + d.etc["p_values_dot.x"].toFixed(6) + "<br />"+"</div>"),
+{"upper": "Highest Satisfaction/Harmony", "lower": "Lowest Satisfaction/Harmony"},
+{"lower": ((a,b) => a.etc.ComboScore - b.etc.ComboScore), "upper": ((a,b) => b.etc.ComboScore - a.etc.ComboScore)},
+false,
+null,
+(a, b) => Math.min(a.x, 1 - a.x, a.y, 1 - a.y) - Math.min(b.x, 1 - b.x, b.y, 1 - b.y));
 
 
 autocomplete(
